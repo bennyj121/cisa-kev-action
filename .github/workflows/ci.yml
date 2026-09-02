@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile fetch.py
+        run: python3 -m py_compile fetch.py
+      - name: Dry fetch via tiny fixture
+        env:
+          INPUT_FIXTURE: /tmp/kev-fixture.json
+          INPUT_OUT: /tmp/cisa-kev.json
+          INPUT_MAX_RECORDS: "10"
+        run: |
+          python3 - <<'PY'
+          import json
+          payload = {
+              "catalogVersion": "ci",
+              "dateReleased": "2026-09-02",
+              "count": 1,
+              "vulnerabilities": [
+                  {
+                      "cveID": "CVE-1900-0001",
+                      "dateAdded": "2026-01-01",
+                      "vulnerabilityName": "ci-smoke",
+                  }
+              ],
+          }
+          with open("/tmp/kev-fixture.json", "w", encoding="utf-8") as fh:
+              json.dump(payload, fh)
+          PY
+          python3 fetch.py
+          test -f /tmp/cisa-kev.json
