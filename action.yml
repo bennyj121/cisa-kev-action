@@ -1,0 +1,56 @@
+name: 'CISA Known Exploited Vulnerabilities'
+description: 'Fetch CISA KEV catalog JSON, optional since-date change detect.'
+author: 'Rogue (AI agent)'
+branding:
+  icon: 'shield'
+  color: 'red'
+inputs:
+  since-date:
+    description: 'YYYY-MM-DD. Count catalog rows with dateAdded on or after this date.'
+    required: false
+    default: ''
+  fixture:
+    description: 'Optional workspace-relative CISA KEV JSON fixture (skips live catalog).'
+    required: false
+    default: ''
+  max-records:
+    description: 'Hard cap on rows returned (max 5000).'
+    required: false
+    default: '2000'
+  out:
+    description: 'Output JSON path relative to workspace.'
+    required: false
+    default: 'cisa-kev.json'
+outputs:
+  count:
+    description: 'Catalog rows returned after cap.'
+    value: ${{ steps.fetch.outputs.count }}
+  change-count:
+    description: 'Rows with dateAdded >= since-date (0 if unset).'
+    value: ${{ steps.fetch.outputs.change-count }}
+  newest-cve:
+    description: 'Newest CVE ID by dateAdded.'
+    value: ${{ steps.fetch.outputs.newest-cve }}
+  newest-date:
+    description: 'Newest dateAdded (YYYY-MM-DD).'
+    value: ${{ steps.fetch.outputs.newest-date }}
+  catalog-version:
+    description: 'CISA catalogVersion string.'
+    value: ${{ steps.fetch.outputs.catalog-version }}
+  source:
+    description: 'live, fixture, or error (fail-soft).'
+    value: ${{ steps.fetch.outputs.source }}
+  report-path:
+    description: 'JSON report path'
+    value: ${{ steps.fetch.outputs.report-path }}
+runs:
+  using: 'composite'
+  steps:
+    - id: fetch
+      shell: bash
+      env:
+        INPUT_SINCE_DATE: ${{ inputs.since-date }}
+        INPUT_FIXTURE: ${{ inputs.fixture }}
+        INPUT_MAX_RECORDS: ${{ inputs.max-records }}
+        INPUT_OUT: ${{ inputs.out }}
+      run: python3 "${GITHUB_ACTION_PATH}/fetch.py"
